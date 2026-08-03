@@ -19,171 +19,7 @@
 </script>
 <!-- ======================================================= -->
 
-<script>
-  let currentUser = null;
-  let authMode = 'login';
 
-  const authEmail = document.getElementById('auth-email');
-  const authPassword = document.getElementById('auth-password');
-  const authMessage = document.getElementById('auth-message');
-  const authSubmit = document.getElementById('auth-submit');
-  const authScreen = document.getElementById('auth-screen');
-  const appWrap = document.getElementById('app-wrap');
-  const tabLogin = document.getElementById('tab-login');
-  const tabSignup = document.getElementById('tab-signup');
-
-  function setAuthMode(mode) {
-    authMode = mode;
-    authMessage.textContent = '';
-    if (mode === 'login') {
-      tabLogin.style.background = '#22392c'; tabLogin.style.color = 'white';
-      tabSignup.style.background = 'white'; tabSignup.style.color = '#26221b';
-      authSubmit.textContent = 'Entrar';
-    } else {
-      tabSignup.style.background = '#22392c'; tabSignup.style.color = 'white';
-      tabLogin.style.background = 'white'; tabLogin.style.color = '#26221b';
-      authSubmit.textContent = 'Criar conta';
-    }
-  }
-  tabLogin.addEventListener('click', () => setAuthMode('login'));
-  tabSignup.addEventListener('click', () => setAuthMode('signup'));
-
-  authSubmit.addEventListener('click', async () => {
-    const email = authEmail.value.trim();
-    const password = authPassword.value;
-    if (!email || !password) { authMessage.textContent = 'Preencha e-mail e senha.'; return; }
-    authSubmit.disabled = true;
-    authMessage.style.color = '#a84f34';
-    authMessage.textContent = '';
-
-    if (authMode === 'login') {
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) { authMessage.textContent = 'Não foi possível entrar: ' + error.message; }
-    } else {
-      const { error } = await supabaseClient.auth.signUp({ email, password });
-      if (error) {
-        authMessage.textContent = 'Não foi possível criar a conta: ' + error.message;
-      } else {
-        authMessage.style.color = '#5f8064';
-        authMessage.textContent = 'Conta criada! Se a confirmação por e-mail estiver ativa no seu projeto, confira sua caixa de entrada antes de entrar.';
-      }
-    }
-    authSubmit.disabled = false;
-  });
-
-  document.getElementById('btn-logout').addEventListener('click', async () => {
-    await supabaseClient.auth.signOut();
-  });
-  document.getElementById('btn-pending-logout').addEventListener('click', async () => {
-    await supabaseClient.auth.signOut();
-  });
-  document.getElementById('btn-pending-refresh').addEventListener('click', () => {
-    checkApprovalAndRender();
-  });
-
-  const pendingScreen = document.getElementById('pending-screen');
-  const btnAdminToggle = document.getElementById('btn-admin-toggle');
-  const adminPanel = document.getElementById('admin-panel');
-  const adminList = document.getElementById('admin-list');
-  const gtRootEl = document.getElementById('gt-root');
-  let isAdminUser = false;
-
-  btnAdminToggle.addEventListener('click', () => {
-    const showingAdmin = adminPanel.style.display === 'block';
-    if (showingAdmin) {
-      adminPanel.style.display = 'none';
-      gtRootEl.style.display = '';
-      btnAdminToggle.textContent = 'Administração';
-    } else {
-      adminPanel.style.display = 'block';
-      gtRootEl.style.display = 'none';
-      btnAdminToggle.textContent = 'Voltar às minhas compras';
-      loadAdminList();
-    }
-  });
-
-  async function loadAdminList() {
-    adminList.innerHTML = '<div style="color:#8a8270; font-size:13px;">Carregando...</div>';
-    const { data, error } = await supabaseClient
-      .from('profiles')
-      .select('id, email, approved, is_admin, created_at')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      adminList.innerHTML = '<div style="color:#a84f34; font-size:13px;">Não foi possível carregar a lista de usuários.</div>';
-      return;
-    }
-    if (!data || data.length === 0) {
-      adminList.innerHTML = '<div style="color:#8a8270; font-size:13px;">Nenhum cadastro ainda.</div>';
-      return;
-    }
-
-    adminList.innerHTML = data.map(p => `
-      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #e6dfcd; font-size:13px;">
-        <div>
-          <div style="font-weight:600;">${p.email}${p.is_admin ? ' <span style="font-size:10px; color:#c1962f; text-transform:uppercase;">· admin</span>' : ''}</div>
-          <div style="font-size:11px; color:#8a8270;">Cadastrado em ${new Date(p.created_at).toLocaleDateString('pt-BR')}</div>
-        </div>
-        <button data-toggle-approve="${p.id}" data-current="${p.approved}"
-          style="padding:6px 14px; border-radius:20px; border:none; cursor:pointer; font-size:11.5px; font-weight:600; text-transform:uppercase; background:${p.approved ? '#e2ebe2' : '#f3e2da'}; color:${p.approved ? '#5f8064' : '#a84f34'};">
-          ${p.approved ? 'Aprovado' : 'Pendente'}
-        </button>
-      </div>
-    `).join('');
-
-    adminList.querySelectorAll('[data-toggle-approve]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.toggleApprove;
-        const current = btn.dataset.current === 'true';
-        const { error } = await supabaseClient.from('profiles').update({ approved: !current }).eq('id', id);
-        if (error) { alert('Erro ao atualizar: ' + error.message); return; }
-        loadAdminList();
-      });
-    });
-  }
-
-  async function checkApprovalAndRender() {
-    if (!currentUser) return;
-    const { data, error } = await supabaseClient
-      .from('profiles')
-      .select('approved, is_admin')
-      .eq('id', currentUser.id)
-      .single();
-
-    if (error) {
-      authScreen.style.display = 'none';
-      pendingScreen.style.display = 'block';
-      appWrap.style.display = 'none';
-      return;
-    }
-
-    if (data && data.approved) {
-      isAdminUser = !!data.is_admin;
-      authScreen.style.display = 'none';
-      pendingScreen.style.display = 'none';
-      appWrap.style.display = 'block';
-      btnAdminToggle.style.display = isAdminUser ? 'inline-block' : 'none';
-      document.getElementById('user-email').textContent = currentUser.email;
-      if (window.__gtInitApp) window.__gtInitApp();
-    } else {
-      authScreen.style.display = 'none';
-      pendingScreen.style.display = 'block';
-      appWrap.style.display = 'none';
-    }
-  }
-
-  supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (session && session.user) {
-      currentUser = session.user;
-      checkApprovalAndRender();
-    } else {
-      currentUser = null;
-      authScreen.style.display = 'block';
-      pendingScreen.style.display = 'none';
-      appWrap.style.display = 'none';
-    }
-  });
-</script>
 
 <div id="auth-screen" style="max-width:380px; margin:60px auto; font-family:'Inter',-apple-system,sans-serif;">
   <div style="background:white; border:1px solid #d9d0b8; border-radius:14px; padding:28px;">
@@ -238,11 +74,6 @@
       <p style="color:#6b6355; font-size:12.5px; margin:0 0 16px;">Aprove ou bloqueie o acesso de cada pessoa cadastrada.</p>
       <div id="admin-list"></div>
     </div>
-  </div>
-
-  <div style="max-width:1100px; margin:0 auto 12px; display:flex; justify-content:flex-end; align-items:center; gap:10px; font-family:'Inter',sans-serif; font-size:12.5px; color:#6b6355;">
-    <span id="user-email"></span>
-    <button id="btn-logout" style="background:transparent; border:1px solid #d9d0b8; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; color:#26221b;">Sair</button>
   </div>
 
 <style>
@@ -454,6 +285,172 @@
     <div id="gt-table-wrap"><div class="loading">Carregando compras...</div></div>
   </div>
 </div>
+
+<script>
+  let currentUser = null;
+  let authMode = 'login';
+
+  const authEmail = document.getElementById('auth-email');
+  const authPassword = document.getElementById('auth-password');
+  const authMessage = document.getElementById('auth-message');
+  const authSubmit = document.getElementById('auth-submit');
+  const authScreen = document.getElementById('auth-screen');
+  const appWrap = document.getElementById('app-wrap');
+  const tabLogin = document.getElementById('tab-login');
+  const tabSignup = document.getElementById('tab-signup');
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    authMessage.textContent = '';
+    if (mode === 'login') {
+      tabLogin.style.background = '#22392c'; tabLogin.style.color = 'white';
+      tabSignup.style.background = 'white'; tabSignup.style.color = '#26221b';
+      authSubmit.textContent = 'Entrar';
+    } else {
+      tabSignup.style.background = '#22392c'; tabSignup.style.color = 'white';
+      tabLogin.style.background = 'white'; tabLogin.style.color = '#26221b';
+      authSubmit.textContent = 'Criar conta';
+    }
+  }
+  tabLogin.addEventListener('click', () => setAuthMode('login'));
+  tabSignup.addEventListener('click', () => setAuthMode('signup'));
+
+  authSubmit.addEventListener('click', async () => {
+    const email = authEmail.value.trim();
+    const password = authPassword.value;
+    if (!email || !password) { authMessage.textContent = 'Preencha e-mail e senha.'; return; }
+    authSubmit.disabled = true;
+    authMessage.style.color = '#a84f34';
+    authMessage.textContent = '';
+
+    if (authMode === 'login') {
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) { authMessage.textContent = 'Não foi possível entrar: ' + error.message; }
+    } else {
+      const { error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) {
+        authMessage.textContent = 'Não foi possível criar a conta: ' + error.message;
+      } else {
+        authMessage.style.color = '#5f8064';
+        authMessage.textContent = 'Conta criada! Se a confirmação por e-mail estiver ativa no seu projeto, confira sua caixa de entrada antes de entrar.';
+      }
+    }
+    authSubmit.disabled = false;
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+  });
+  document.getElementById('btn-pending-logout').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+  });
+  document.getElementById('btn-pending-refresh').addEventListener('click', () => {
+    checkApprovalAndRender();
+  });
+
+  const pendingScreen = document.getElementById('pending-screen');
+  const btnAdminToggle = document.getElementById('btn-admin-toggle');
+  const adminPanel = document.getElementById('admin-panel');
+  const adminList = document.getElementById('admin-list');
+  const gtRootEl = document.getElementById('gt-root');
+  let isAdminUser = false;
+
+  btnAdminToggle.addEventListener('click', () => {
+    const showingAdmin = adminPanel.style.display === 'block';
+    if (showingAdmin) {
+      adminPanel.style.display = 'none';
+      gtRootEl.style.display = '';
+      btnAdminToggle.textContent = 'Administração';
+    } else {
+      adminPanel.style.display = 'block';
+      gtRootEl.style.display = 'none';
+      btnAdminToggle.textContent = 'Voltar às minhas compras';
+      loadAdminList();
+    }
+  });
+
+  async function loadAdminList() {
+    adminList.innerHTML = '<div style="color:#8a8270; font-size:13px;">Carregando...</div>';
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('id, email, approved, is_admin, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      adminList.innerHTML = '<div style="color:#a84f34; font-size:13px;">Não foi possível carregar a lista de usuários.</div>';
+      return;
+    }
+    if (!data || data.length === 0) {
+      adminList.innerHTML = '<div style="color:#8a8270; font-size:13px;">Nenhum cadastro ainda.</div>';
+      return;
+    }
+
+    adminList.innerHTML = data.map(p => `
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #e6dfcd; font-size:13px;">
+        <div>
+          <div style="font-weight:600;">${p.email}${p.is_admin ? ' <span style="font-size:10px; color:#c1962f; text-transform:uppercase;">· admin</span>' : ''}</div>
+          <div style="font-size:11px; color:#8a8270;">Cadastrado em ${new Date(p.created_at).toLocaleDateString('pt-BR')}</div>
+        </div>
+        <button data-toggle-approve="${p.id}" data-current="${p.approved}"
+          style="padding:6px 14px; border-radius:20px; border:none; cursor:pointer; font-size:11.5px; font-weight:600; text-transform:uppercase; background:${p.approved ? '#e2ebe2' : '#f3e2da'}; color:${p.approved ? '#5f8064' : '#a84f34'};">
+          ${p.approved ? 'Aprovado' : 'Pendente'}
+        </button>
+      </div>
+    `).join('');
+
+    adminList.querySelectorAll('[data-toggle-approve]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.toggleApprove;
+        const current = btn.dataset.current === 'true';
+        const { error } = await supabaseClient.from('profiles').update({ approved: !current }).eq('id', id);
+        if (error) { alert('Erro ao atualizar: ' + error.message); return; }
+        loadAdminList();
+      });
+    });
+  }
+
+  async function checkApprovalAndRender() {
+    if (!currentUser) return;
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .select('approved, is_admin')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (error) {
+      authScreen.style.display = 'none';
+      pendingScreen.style.display = 'block';
+      appWrap.style.display = 'none';
+      return;
+    }
+
+    if (data && data.approved) {
+      isAdminUser = !!data.is_admin;
+      authScreen.style.display = 'none';
+      pendingScreen.style.display = 'none';
+      appWrap.style.display = 'block';
+      btnAdminToggle.style.display = isAdminUser ? 'inline-block' : 'none';
+      document.getElementById('user-email').textContent = currentUser.email;
+      if (window.__gtInitApp) window.__gtInitApp();
+    } else {
+      authScreen.style.display = 'none';
+      pendingScreen.style.display = 'block';
+      appWrap.style.display = 'none';
+    }
+  }
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (session && session.user) {
+      currentUser = session.user;
+      checkApprovalAndRender();
+    } else {
+      currentUser = null;
+      authScreen.style.display = 'block';
+      pendingScreen.style.display = 'none';
+      appWrap.style.display = 'none';
+    }
+  });
+</script>
 
 <script>
 (function() {
