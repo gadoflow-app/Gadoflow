@@ -153,6 +153,13 @@
   #gt-root .week-day .lot.past { border-left-color: var(--sage); opacity: 0.7; }
   #gt-root .week-day .lot b { font-family: 'IBM Plex Mono', monospace; }
   #gt-root .week-day .none { font-size: 10.5px; color: #b5ac97; }
+  #gt-root .week-day:hover { border-color: var(--gold); }
+
+  #gt-root .gt-modal { display: none; position: fixed; inset: 0; background: rgba(38,34,26,0.55); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+  #gt-root .gt-modal.open { display: flex; }
+  #gt-root .gt-modal-card { background: white; border-radius: 12px; padding: 20px; max-width: 480px; width: 100%; max-height: 80vh; overflow-y: auto; }
+  #gt-root .gt-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  #gt-root .gt-modal-head h3 { font-family: 'Zilla Slab', Georgia, serif; color: var(--pasture); margin: 0; font-size: 17px; }
 
   #gt-root table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   #gt-root thead th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b6355; padding: 8px 9px; border-bottom: 2px solid var(--charcoal); white-space: nowrap; }
@@ -260,11 +267,29 @@
             <option value="Marruco">Marruco</option>
           </select>
         </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <label>Forma de compra</label>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="chip active" id="f-tipo-arroba" data-tipo="arroba">Por arroba (peso)</button>
+          <button type="button" class="chip" id="f-tipo-cabeca" data-tipo="cabeca">Por cabeça (valor fechado)</button>
+        </div>
+      </div>
+
+      <div class="form-grid" id="f-grupo-arroba" style="margin-top:14px;">
         <div><label>Valor @ (R$)</label><input type="number" id="f-valor" step="0.01" placeholder="Ex: 320.00"></div>
         <div><label>Rendimento (%)</label><input type="number" id="f-rendimento" step="0.1" placeholder="Ex: 52"></div>
         <div><label>Desconto (kg por cabeça)</label><input type="number" id="f-desconto" step="0.1" placeholder="Ex: 9"></div>
-        <div><label>Comissão (%)</label><input type="number" id="f-comissao" step="0.1" placeholder="Ex: 1.5"></div>
         <div><label>Arrobas totais (opcional)</label><input type="number" id="f-arrobas" step="0.01" placeholder="p/ calcular valor total"></div>
+      </div>
+
+      <div class="form-grid" id="f-grupo-cabeca" style="margin-top:14px; display:none;">
+        <div><label>Valor por cabeça (R$)</label><input type="number" id="f-valor-cabeca" step="0.01" placeholder="Ex: 2200.00"></div>
+      </div>
+
+      <div class="form-grid" style="margin-top:14px;">
+        <div><label>Comissão (%)</label><input type="number" id="f-comissao" step="0.1" placeholder="Ex: 1.5"></div>
         <div><label>Data da compra</label><input type="date" id="f-data-compra"></div>
         <div><label>Data do embarque</label><input type="date" id="f-data-embarque"></div>
         <div><label>Destino do embarque</label><input type="text" id="f-destino" placeholder="Fazenda ou frigorífico"></div>
@@ -280,6 +305,16 @@
       <h2>Embarques da semana</h2>
       <div class="range" id="gt-week-range"></div>
       <div class="week-days" id="gt-week-days"></div>
+    </div>
+
+    <div id="gt-day-modal" class="gt-modal">
+      <div class="gt-modal-card">
+        <div class="gt-modal-head">
+          <h3 id="gt-day-modal-title"></h3>
+          <button id="gt-day-modal-close" class="icon-btn" style="font-size:18px;">✕</button>
+        </div>
+        <div id="gt-day-modal-body"></div>
+      </div>
     </div>
 
     <div id="gt-table-wrap"><div class="loading">Carregando compras...</div></div>
@@ -484,6 +519,10 @@
     return Math.max(c.arrobas - descontoArrobas, 0);
   }
   function calcValorTotal(c) {
+    if (c.tipoPrecificacao === 'cabeca') {
+      if (!c.valorCabeca || !c.qtd) return null;
+      return c.qtd * c.valorCabeca;
+    }
     const arrobasLiquidas = calcArrobasLiquidas(c);
     if (arrobasLiquidas === null) return null;
     return arrobasLiquidas * c.valor;
@@ -500,7 +539,9 @@
       id: c.id, user_id: (currentUser && currentUser.id) || null,
       comprado_para: c.compradoPara, comprado_de: c.compradoDe,
       estado: c.estado, cidade: c.cidade, qtd: c.qtd, animal: c.animal,
+      tipo_precificacao: c.tipoPrecificacao || 'arroba',
       valor: c.valor, rendimento: c.rendimento, desconto: c.desconto,
+      valor_cabeca: c.valorCabeca,
       comissao: c.comissao, arrobas: c.arrobas,
       data_compra: c.dataCompra || null, data_embarque: c.dataEmbarque || null,
       destino_embarque: c.destinoEmbarque, gta: c.gta,
@@ -512,7 +553,9 @@
     return {
       id: r.id, compradoPara: r.comprado_para, compradoDe: r.comprado_de,
       estado: r.estado, cidade: r.cidade, qtd: r.qtd, animal: r.animal,
+      tipoPrecificacao: r.tipo_precificacao || 'arroba',
       valor: r.valor, rendimento: r.rendimento, desconto: r.desconto,
+      valorCabeca: r.valor_cabeca,
       comissao: r.comissao, arrobas: r.arrobas,
       dataCompra: r.data_compra, dataEmbarque: r.data_embarque,
       destinoEmbarque: r.destino_embarque, gta: r.gta,
@@ -647,10 +690,46 @@
       const lotsHtml = lots.length
         ? lots.map(c => `<div class="lot ${c.embarcado ? 'past' : ''}"><b>${c.qtd}</b> ${c.animal} — ${c.cidade || ''}${c.destinoEmbarque ? ' → ' + c.destinoEmbarque : ''}</div>`).join('')
         : `<div class="none">—</div>`;
-      return `<div class="week-day ${isToday ? 'today' : ''}"><div class="dname">${DIAS_LONGO[d.getDay()]}</div><div class="dnum">${String(d.getDate()).padStart(2,'0')}</div>${lotsHtml}</div>`;
+      return `<div class="week-day ${isToday ? 'today' : ''}" data-date="${iso}" style="cursor:pointer;"><div class="dname">${DIAS_LONGO[d.getDay()]}</div><div class="dnum">${String(d.getDate()).padStart(2,'0')}</div>${lotsHtml}</div>`;
     }).join('');
     $('#gt-week-days').innerHTML = html;
+    $('#gt-week-days').querySelectorAll('.week-day').forEach(el => {
+      el.addEventListener('click', () => openDayModal(el.dataset.date));
+    });
   }
+
+  function openDayModal(iso) {
+    const dt = parseLocalDate(iso);
+    const lots = compras.filter(c => c.dataEmbarque === iso);
+    const modal = $('#gt-day-modal');
+    const body = $('#gt-day-modal-body');
+    $('#gt-day-modal-title').textContent = `${DIAS_LONGO[dt.getDay()]}, ${fmtDate(iso)}`;
+
+    if (lots.length === 0) {
+      body.innerHTML = `<div style="color:#8a8270; font-size:13px; padding:12px 0;">Nenhum embarque previsto para esse dia.</div>`;
+    } else {
+      body.innerHTML = lots.map(c => {
+        const valorTotal = calcValorTotal(c);
+        return `
+          <div style="border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <strong style="font-family:'Inter',sans-serif;">${c.qtd} ${c.animal}</strong>
+              <span class="tag ${c.embarcado ? 'done' : 'wait'}">${c.embarcado ? 'Embarcado' : 'Aguardando'}</span>
+            </div>
+            <div style="font-size:12.5px; color:#6b6355; line-height:1.6;">
+              Para: <strong style="color:var(--charcoal);">${c.compradoPara || '—'}</strong> · De: ${c.compradoDe || '—'}<br>
+              Origem: ${c.cidade || '—'}${c.estado ? '/' + c.estado : ''}<br>
+              Destino: ${c.destinoEmbarque || '—'}<br>
+              Valor total: ${valorTotal !== null ? fmtMoney(valorTotal) : '—'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    modal.classList.add('open');
+  }
+  $('#gt-day-modal-close').addEventListener('click', () => $('#gt-day-modal').classList.remove('open'));
+  $('#gt-day-modal').addEventListener('click', (e) => { if (e.target.id === 'gt-day-modal') $('#gt-day-modal').classList.remove('open'); });
 
   function renderTable() {
     const wrap = $('#gt-table-wrap');
@@ -662,14 +741,15 @@
     const rows = list.map(c => {
       const valorTotal = calcValorTotal(c);
       const comissaoValor = calcComissaoValor(c);
+      const isCabeca = c.tipoPrecificacao === 'cabeca';
       return `
         <tr data-id="${c.id}">
           <td class="names"><span class="para">${c.compradoPara || '—'}</span><br><span class="de">de: ${c.compradoDe || '—'}</span></td>
           <td class="city">${c.cidade || '—'}${c.estado ? '/' + c.estado : ''}</td>
           <td>${c.qtd || '—'} ${c.animal || ''}</td>
-          <td>${fmtMoney(c.valor)}</td>
-          <td>${c.rendimento ? c.rendimento + '%' : '—'}</td>
-          <td>${c.desconto ? c.desconto + ' kg/cab' : '—'}</td>
+          <td>${isCabeca ? fmtMoney(c.valorCabeca) + ' /cab' : fmtMoney(c.valor) + ' /@'}</td>
+          <td>${isCabeca ? '—' : (c.rendimento ? c.rendimento + '%' : '—')}</td>
+          <td>${isCabeca ? '—' : (c.desconto ? c.desconto + ' kg/cab' : '—')}</td>
           <td>${valorTotal !== null ? fmtMoney(valorTotal) : '—'}</td>
           <td>${fmtDate(c.dataCompra)}</td>
           <td>${fmtDateWithDay(c.dataEmbarque)}</td>
@@ -686,7 +766,7 @@
     wrap.innerHTML = `
       <table>
         <thead><tr>
-          <th>Para / De</th><th>Cidade</th><th>Qtd / Animal</th><th>Valor @</th><th>Rend.</th><th>Desc.</th>
+          <th>Para / De</th><th>Cidade</th><th>Qtd / Animal</th><th>Valor</th><th>Rend.</th><th>Desc.</th>
           <th>Valor total</th><th>Compra</th><th>Embarque</th><th>Destino</th><th>Status</th><th>Comissão</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
@@ -722,11 +802,22 @@
   }
 
   // ---------- Form (add/edit) ----------
+  function setTipoPrecificacao(tipo) {
+    $('#f-tipo-arroba').classList.toggle('active', tipo === 'arroba');
+    $('#f-tipo-cabeca').classList.toggle('active', tipo === 'cabeca');
+    $('#f-grupo-arroba').style.display = tipo === 'arroba' ? '' : 'none';
+    $('#f-grupo-cabeca').style.display = tipo === 'cabeca' ? '' : 'none';
+    $('#gt-form-card').dataset.tipo = tipo;
+  }
+  $('#f-tipo-arroba').addEventListener('click', () => setTipoPrecificacao('arroba'));
+  $('#f-tipo-cabeca').addEventListener('click', () => setTipoPrecificacao('cabeca'));
+
   function clearForm() {
-    ['f-para','f-de','f-qtd','f-valor','f-rendimento','f-desconto','f-comissao','f-arrobas','f-data-compra','f-data-embarque','f-destino','f-gta'].forEach(id => { $('#' + id).value = ''; });
+    ['f-para','f-de','f-qtd','f-valor','f-rendimento','f-desconto','f-comissao','f-arrobas','f-valor-cabeca','f-data-compra','f-data-embarque','f-destino','f-gta'].forEach(id => { $('#' + id).value = ''; });
     $('#f-animal').value = 'Bezerro';
     $('#f-estado').value = '';
     fillCidadeSelect($('#f-cidade'), '', 'Selecione o estado');
+    setTipoPrecificacao('arroba');
     editingId = null;
     $('#gt-save').textContent = 'Salvar compra';
   }
@@ -742,9 +833,11 @@
     $('#f-cidade').value = c.cidade || '';
     $('#f-qtd').value = c.qtd || '';
     $('#f-animal').value = c.animal || 'Bezerro';
+    setTipoPrecificacao(c.tipoPrecificacao === 'cabeca' ? 'cabeca' : 'arroba');
     $('#f-valor').value = c.valor || '';
     $('#f-rendimento').value = c.rendimento || '';
     $('#f-desconto').value = c.desconto || '';
+    $('#f-valor-cabeca').value = c.valorCabeca || '';
     $('#f-comissao').value = c.comissao || '';
     $('#f-arrobas').value = c.arrobas || '';
     $('#f-data-compra').value = c.dataCompra || '';
@@ -767,6 +860,7 @@
     const compradoPara = $('#f-para').value.trim();
     const qtd = $('#f-qtd').value;
     if (!compradoPara || !qtd) { alert('Preencha ao menos "Comprado para" e a quantidade.'); return; }
+    const tipoPrecificacao = $('#gt-form-card').dataset.tipo === 'cabeca' ? 'cabeca' : 'arroba';
 
     const data = {
       id: editingId || (Date.now().toString(36) + Math.random().toString(36).slice(2,6)),
@@ -776,9 +870,11 @@
       cidade: $('#f-cidade').value,
       qtd: Number(qtd),
       animal: $('#f-animal').value,
+      tipoPrecificacao,
       valor: Number($('#f-valor').value) || 0,
       rendimento: Number($('#f-rendimento').value) || 0,
       desconto: Number($('#f-desconto').value) || 0,
+      valorCabeca: Number($('#f-valor-cabeca').value) || 0,
       comissao: Number($('#f-comissao').value) || 0,
       arrobas: Number($('#f-arrobas').value) || 0,
       dataCompra: $('#f-data-compra').value,
