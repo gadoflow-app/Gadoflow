@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+<circle cx="120" cy="120" r="96" fill="#22392c"/>
+<g clip-path="url(#badgeClip)">
+<path d="M120 150 C 70 150, 40 110, 48 68 C 52 48, 66 40, 74 52 C 80 62, 72 74, 82 90 C 92 106, 112 108, 120 130" fill="none" stroke="#c1962f" stroke-width="11" stroke-linecap="round"/>
+<path d="M120 150 C 170 150, 200 110, 192 68 C 188 48, 174 40, 166 52 C 160 62, 168 74, 158 90 C 148 106, 128 108, 120 130" fill="none" stroke="#c1962f" stroke-width="11" stroke-linecap="round"/>
+<circle cx="120" cy="150" r="10" fill="#f3efe4"/>
+<path d="M 30 178 C 60 168, 90 188, 120 178 C 150 168, 180 188, 210 178" fill="none" stroke="#f3efe4" stroke-width="5" stroke-linecap="round" opacity="0.55"/>
+</g>
+<circle cx="120" cy="120" r="96" fill="none" stroke="#c1962f" stroke-width="2"/>
+<defs><clipPath id="badgeClip"><circle cx="120" cy="120" r="96"/></clipPath></defs>
+</svg>
