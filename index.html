@@ -112,9 +112,6 @@
   document.getElementById('btn-pending-logout').addEventListener('click', async () => {
     await supabaseClient.auth.signOut();
   });
-  document.getElementById('btn-logout').addEventListener('click', async () => {
-    await supabaseClient.auth.signOut();
-  });
   document.getElementById('btn-pending-refresh').addEventListener('click', () => {
     checkApprovalAndRender();
   });
@@ -1294,6 +1291,10 @@
     renderEmbarques();
     renderComissoes();
   }
+
+  $('#btn-logout').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+  });
 
   let appStarted = false;
   window.__gtInitApp = function() {
