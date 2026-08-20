@@ -20,8 +20,9 @@
 
 <div id="auth-screen" style="max-width:380px; margin:60px auto; font-family:'Inter',-apple-system,sans-serif; padding:0 16px;">
   <div style="background:white; border:1px solid #d9d0b8; border-radius:14px; padding:28px;">
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-      <img src="logo-full.png" alt="Cow Scale" style="max-width:290px; width:100%; height:auto; display:block; margin:0 auto;">
+    <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:4px;">
+      <img src="logo-icon.png" alt="Boi" style="height:44px; width:auto; flex-shrink:0;">
+      <img src="logo-wordmark.png" alt="Cow Scale" style="height:32px; width:auto;">
     </div>
     <p style="color:#6b6355; font-size:13px; margin:0 0 20px;">Entre com sua conta para acessar suas compras</p>
 
@@ -192,7 +193,7 @@
   #gt-root .stats { display:grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap:10px; margin-bottom:16px; }
   #gt-root .stat { background:white; border:1px solid var(--line); border-radius:10px; padding:12px 14px; min-width:0; }
   #gt-root .stat.commission { background:#faf3e2; }
-  #gt-root .stat .n { font-family:'IBM Plex Mono', monospace; font-size:clamp(15px,4vw,20px); font-weight:600; color:var(--pasture); overflow-wrap:break-word; line-height:1.2; }
+  #gt-root .stat .n { font-family:'IBM Plex Mono', monospace; font-size:clamp(13px,3.6vw,20px); font-weight:600; color:var(--pasture); white-space:nowrap; line-height:1.2; }
   #gt-root .stat.commission .n { color:var(--hide); }
   #gt-root .stat .l { font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:#6b6355; margin-top:4px; }
 
@@ -304,9 +305,9 @@
   <div id="gt-root">
 
     <div class="topbar">
-      <div class="brand">
-        <img src="logo-icon.png" alt="Cow Scale" style="height:42px; width:auto; flex-shrink:0;">
-        <h1>Cow Scale</h1>
+      <div class="brand" style="gap:8px;">
+        <img src="logo-icon.png" alt="Boi" style="height:36px; width:auto; flex-shrink:0; filter: brightness(0) invert(1);">
+        <img src="logo-wordmark.png" alt="Cow Scale" style="height:24px; width:auto; filter: brightness(0) invert(1);">
       </div>
       <div class="user">
         <span id="user-email"></span>
@@ -321,6 +322,7 @@
       <button class="navtab" data-tab="comissoes">Comissões</button>
       <button class="navtab" data-tab="agenda">Agenda de Embarque</button>
       <button class="navtab" data-tab="financeiro">Financeiro</button>
+      <button class="navtab" data-tab="despesas">Despesas</button>
       <button class="navtab" id="nav-admin" data-tab="admin" style="display:none;">Administração</button>
     </div>
 
@@ -413,11 +415,13 @@
           <div><label>Peso total (kg)</label><input type="number" id="f-peso" step="0.01" placeholder="Peso vivo, de balança"></div>
           <div><label>Rendimento de carcaça (%)</label><input type="number" id="f-rendimento" step="0.1" placeholder="Ex: 52"></div>
           <div><label>Desconto (kg por cabeça)</label><input type="number" id="f-desconto" step="0.1" placeholder="Ex: 9"></div>
-          <div><label>Valor da arroba (R$)</label><input type="number" id="f-valor" step="0.01" placeholder="Ex: 320.00"></div>
+          <div><label>Valor de compra da arroba (R$)</label><input type="number" id="f-valor" step="0.01" placeholder="Ex: 320.00"></div>
+          <div><label>Valor de venda da arroba (R$, opcional)</label><input type="number" id="f-valor-venda" step="0.01" placeholder="Ex: 325.00"></div>
         </div>
 
         <div class="form-grid" id="f-grupo-cabeca" style="margin-top:14px; display:none;">
-          <div><label>Valor por cabeça (R$)</label><input type="number" id="f-valor-cabeca" step="0.01" placeholder="Ex: 2200.00"></div>
+          <div><label>Valor de compra por cabeça (R$)</label><input type="number" id="f-valor-cabeca" step="0.01" placeholder="Ex: 2200.00"></div>
+          <div><label>Valor de venda por cabeça (R$, opcional)</label><input type="number" id="f-valor-venda-cabeca" step="0.01" placeholder="Ex: 2300.00"></div>
         </div>
 
         <div id="f-preview" style="margin-top:10px; font-size:12.5px; color:#6b6355; font-family:'IBM Plex Mono',monospace;"></div>
@@ -506,6 +510,7 @@
 
           <div class="form-grid" style="margin-top:14px;">
             <div><label>Descrição</label><input type="text" id="fin-desc" placeholder="Ex: Combustível, pedágio..."></div>
+            <div><label>Categoria</label><select id="fin-categoria"></select></div>
             <div><label>Valor (R$)</label><input type="number" id="fin-valor" step="0.01" placeholder="Ex: 150.00"></div>
           </div>
           <div class="form-actions">
@@ -517,6 +522,24 @@
       <div class="card">
         <h2>Resumo de todas as compras</h2>
         <div class="table-scroll" id="gt-financeiro-resumo"></div>
+      </div>
+    </div>
+
+    <!-- ===================== DESPESAS (por categoria) ===================== -->
+    <div class="tabpanel" id="tab-despesas">
+      <div class="card">
+        <div class="toolbar">
+          <h2 style="margin:0;">Despesas por categoria</h2>
+          <div class="filters">
+            <button class="chip active" data-despfiltro="todas">Todo o período</button>
+            <button class="chip" data-despfiltro="mes">Só este mês</button>
+          </div>
+        </div>
+        <div class="stats" id="gt-despesas-stats"></div>
+      </div>
+      <div class="card">
+        <h2>Todos os lançamentos</h2>
+        <div class="table-scroll" id="gt-despesas-lista"></div>
       </div>
     </div>
 
@@ -578,6 +601,7 @@
   function toISO(dt) { const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0'); const d = String(dt.getDate()).padStart(2,'0'); return `${y}-${m}-${d}`; }
   function startOfWeek(dt) { const day = dt.getDay(); const diff = (day === 0 ? -6 : 1 - day); const monday = new Date(dt); monday.setDate(dt.getDate() + diff); monday.setHours(0,0,0,0); return monday; }
   function fmtMoney(v) { if (v === null || v === undefined || isNaN(v) || v === 0) return '—'; return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function fmtMoneyCompact(v) { if (v === null || v === undefined || isNaN(v) || v === 0) return '—'; return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }); }
 
   // ---------- Calculation ----------
   function calcValorPorCabeca(c) {
@@ -605,6 +629,20 @@
     if (!total) return 0;
     return c.comissao ? total * (c.comissao / 100) : 0;
   }
+  function calcMargemRevenda(c) {
+    if (c.tipoPrecificacao === 'cabeca') {
+      if (!c.valorVendaCabeca || !c.valorCabeca || !c.qtd) return 0;
+      return (c.valorVendaCabeca - c.valorCabeca) * c.qtd;
+    }
+    if (!c.valorVenda || !c.valor || !c.qtd) return 0;
+    const arrobasPorCabeca = calcArrobasPorCabeca(c);
+    if (!arrobasPorCabeca) return 0;
+    const arrobasTotais = arrobasPorCabeca * c.qtd;
+    return (c.valorVenda - c.valor) * arrobasTotais;
+  }
+  function calcLucroTotal(c) {
+    return calcComissaoValor(c) + calcMargemRevenda(c);
+  }
 
   // ---------- Supabase field mapping ----------
   function toDb(c) {
@@ -616,6 +654,7 @@
       tipo_precificacao: c.tipoPrecificacao || 'arroba',
       tipo_balanca: c.tipoBalanca || null,
       valor: c.valor, rendimento: c.rendimento, desconto: c.desconto,
+      valor_venda: c.valorVenda, valor_venda_cabeca: c.valorVendaCabeca,
       peso_total: c.peso, valor_cabeca: c.valorCabeca,
       comissao: c.comissao, arrobas: c.arrobas,
       data_compra: c.dataCompra || null, data_embarque: c.dataEmbarque || null,
@@ -631,6 +670,7 @@
       tipoPrecificacao: r.tipo_precificacao || 'arroba',
       tipoBalanca: r.tipo_balanca,
       valor: r.valor, rendimento: r.rendimento, desconto: r.desconto,
+      valorVenda: r.valor_venda, valorVendaCabeca: r.valor_venda_cabeca,
       peso: r.peso_total, valorCabeca: r.valor_cabeca,
       comissao: r.comissao, arrobas: r.arrobas,
       dataCompra: r.data_compra, dataEmbarque: r.data_embarque,
@@ -639,11 +679,12 @@
       dataComissaoPaga: r.data_comissao_paga
     };
   }
+  const CATEGORIAS_DESPESA = ['Combustível','Alimentação','Pedágio','Hospedagem','Manutenção','Outros'];
   function despesaToDb(d) {
-    return { id: d.id, compra_id: d.compraId, user_id: (currentUser && currentUser.id) || null, descricao: d.descricao, valor: d.valor };
+    return { id: d.id, compra_id: d.compraId, user_id: (currentUser && currentUser.id) || null, descricao: d.descricao, valor: d.valor, categoria: d.categoria || 'Outros' };
   }
   function despesaFromDb(r) {
-    return { id: r.id, compraId: r.compra_id, descricao: r.descricao, valor: r.valor };
+    return { id: r.id, compraId: r.compra_id, descricao: r.descricao, valor: r.valor, categoria: r.categoria || 'Outros', createdAt: r.created_at };
   }
 
   // ---------- Populate state/city selects ----------
@@ -666,6 +707,7 @@
   fillEstadoSelect($('#f-estado'));
   fillEstadoSelect($('#ff-estado'));
   ANIMAIS.forEach(a => { const opt = document.createElement('option'); opt.value = a; opt.textContent = a; $('#ff-animal').appendChild(opt); });
+  CATEGORIAS_DESPESA.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; $('#fin-categoria').appendChild(opt); });
 
   $('#f-estado').addEventListener('change', () => fillCidadeDatalist($('#dl-cidades'), $('#f-estado').value));
   $('#ff-estado').addEventListener('change', () => fillCidadeDatalist($('#dl-cidades-ff'), $('#ff-estado').value));
@@ -729,6 +771,7 @@
       if (btn.dataset.tab === 'admin') loadAdminList();
       if (btn.dataset.tab === 'financeiro') renderFinanceiro();
       if (btn.dataset.tab === 'agenda') renderAgenda();
+      if (btn.dataset.tab === 'despesas') renderDespesasTab();
     });
   });
 
@@ -753,6 +796,29 @@
   }
 
   // ---------- Render: Dashboard ----------
+  // ---------- Auto-fit stat numbers so they never overflow their box ----------
+  function fitStatNumbers(container) {
+    if (!container) return;
+    container.querySelectorAll('.stat .n').forEach(el => {
+      el.style.fontSize = '';
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      const minSize = 10;
+      let guard = 0;
+      while (el.scrollWidth > el.clientWidth + 1 && size > minSize && guard < 30) {
+        size -= 1;
+        el.style.fontSize = size + 'px';
+        guard++;
+      }
+    });
+  }
+  let fitResizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(fitResizeTimer);
+    fitResizeTimer = setTimeout(() => {
+      ['#gt-stats','#gt-comissoes-stats','#gt-fechamento-stats','#gt-despesas-stats'].forEach(sel => fitStatNumbers($(sel)));
+    }, 150);
+  });
+
   function renderStats() {
     const total = compras.length;
     const aguardando = compras.filter(c => !c.embarcado).length;
@@ -780,6 +846,7 @@
       <div class="stat commission"><div class="n">${fmtMoney(recebidoMes)}</div><div class="l">Comissão no mês</div></div>
       <div class="stat commission"><div class="n">${fmtMoney(aReceber)}</div><div class="l">Comissão a receber</div></div>
     `;
+    fitStatNumbers($('#gt-stats'));
   }
 
   function renderWeek() {
@@ -839,6 +906,8 @@
     const valorTotal = calcValorTotal(c);
     const valorPorCabeca = calcValorPorCabeca(c);
     const comissaoValor = calcComissaoValor(c);
+    const margemValor = calcMargemRevenda(c);
+    const lucroTotal = calcLucroTotal(c);
     return `
       <tr data-id="${c.id}">
         <td class="numbadge">#${c.numero || '—'}</td>
@@ -852,6 +921,8 @@
         <td>${c.destinoEmbarque || '—'}${c.gta ? `<span class="gta-badge">GTA</span>` : ''}</td>
         <td><button class="tag ${c.embarcado ? 'done' : 'wait'}" data-toggle-embarque="${c.id}">${c.embarcado ? 'Embarcado' : 'Aguardando'}</button></td>
         <td>${comissaoValor > 0 ? `<button class="tag ${c.comissaoPaga ? 'paid' : 'pending'}" data-toggle-comissao="${c.id}">${c.comissaoPaga ? 'Recebida' : 'A receber'} · ${fmtMoney(comissaoValor)}</button>` : '—'}</td>
+        <td>${margemValor > 0 ? fmtMoney(margemValor) : '—'}</td>
+        <td style="font-weight:600; color:${lucroTotal > 0 ? 'var(--sage)' : 'inherit'};">${lucroTotal > 0 ? fmtMoney(lucroTotal) : '—'}</td>
         <td>
           ${opts.noActions ? '' : `<button class="icon-btn" data-edit="${c.id}" title="Editar">✎</button>
           <button class="icon-btn del" data-del="${c.id}" title="Excluir">✕</button>`}
@@ -866,7 +937,8 @@
       <table>
         <thead><tr>
           <th>#</th><th>Para / De</th><th>Cidade</th><th>Qtd / Animal</th><th>Valor/cab.</th>
-          <th>Valor total</th><th>Compra</th><th>Embarque</th><th>Destino</th><th>Status</th><th>Comissão</th><th></th>
+          <th>Valor total</th><th>Compra</th><th>Embarque</th><th>Destino</th><th>Status</th><th>Comissão</th>
+          <th>Margem revenda</th><th>Lucro total</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
@@ -902,6 +974,7 @@
       <div class="stat commission"><div class="n">${fmtMoney(totalPendente)}</div><div class="l">Total a receber</div></div>
       <div class="stat"><div class="n">${withComissao.length}</div><div class="l">Compras com comissão</div></div>
     `;
+    fitStatNumbers($('#gt-comissoes-stats'));
     let list = withComissao;
     if (comissaoTabFiltro === 'pendente') list = list.filter(c => !c.comissaoPaga);
     if (comissaoTabFiltro === 'paga') list = list.filter(c => c.comissaoPaga);
@@ -946,6 +1019,9 @@
     const doMes = compras.filter(c => c.dataEmbarque && c.dataEmbarque >= toISO(firstOfMonth) && c.dataEmbarque <= toISO(lastOfMonth));
     const totalCabecas = doMes.reduce((s,c) => s + (c.qtd||0), 0);
     const totalComissao = doMes.reduce((s,c) => s + calcComissaoValor(c), 0);
+    const totalMargem = doMes.reduce((s,c) => s + calcMargemRevenda(c), 0);
+    const idsDoMes = new Set(doMes.map(c => c.id));
+    const totalDespesasMes = despesas.filter(d => idsDoMes.has(d.compraId)).reduce((s,d) => s + (Number(d.valor)||0), 0);
     const femeas = doMes.filter(c => ANIMAIS_FEMEA.includes(c.animal)).reduce((s,c) => s + (c.qtd||0), 0);
     const machos = totalCabecas - femeas;
     $('#gt-fechamento-stats').innerHTML = `
@@ -954,7 +1030,10 @@
       <div class="stat"><div class="n">${machos}</div><div class="l">Machos</div></div>
       <div class="stat"><div class="n">${femeas}</div><div class="l">Fêmeas</div></div>
       <div class="stat commission"><div class="n">${fmtMoney(totalComissao)}</div><div class="l">Comissão do mês</div></div>
+      <div class="stat commission"><div class="n">${fmtMoney(totalMargem)}</div><div class="l">Margem de revenda</div></div>
+      <div class="stat"><div class="n">${fmtMoney(totalDespesasMes)}</div><div class="l">Despesas do mês</div></div>
     `;
+    fitStatNumbers($('#gt-fechamento-stats'));
   }
   $('#gt-mes-anterior').addEventListener('click', () => { agendaMonth.setMonth(agendaMonth.getMonth() - 1); renderAgenda(); });
   $('#gt-mes-proximo').addEventListener('click', () => { agendaMonth.setMonth(agendaMonth.getMonth() + 1); renderAgenda(); });
@@ -982,11 +1061,12 @@
     const c = compras.find(x => x.id === id);
     if (!c) return;
     const comissao = calcComissaoValor(c);
+    const margem = calcMargemRevenda(c);
     const despesasDaCompra = despesas.filter(d => d.compraId === id);
     const totalDespesas = despesasDaCompra.reduce((s,d) => s + (Number(d.valor)||0), 0);
-    const resultado = comissao - totalDespesas;
+    const resultado = comissao + margem - totalDespesas;
 
-    $('#fin-comissao').textContent = fmtMoney(comissao);
+    $('#fin-comissao').textContent = fmtMoney(comissao) + (margem > 0 ? ` + ${fmtMoney(margem)} margem` : '');
     $('#fin-despesas-total').textContent = fmtMoney(totalDespesas);
     const box = $('#fin-profit-box');
     box.className = 'profit-box ' + (resultado >= 0 ? 'positive' : 'negative');
@@ -997,7 +1077,7 @@
       ? `<div style="color:#8a8270; font-size:13px; padding:8px 0;">Nenhuma despesa lançada ainda.</div>`
       : despesasDaCompra.map(d => `
           <div class="expense-row">
-            <span>${d.descricao || '—'}</span>
+            <span>${d.descricao || '—'} <span class="gta-badge">${d.categoria || 'Outros'}</span></span>
             <span style="display:flex; align-items:center; gap:8px;">
               ${fmtMoney(Number(d.valor)||0)}
               <button class="icon-btn del" data-del-despesa="${d.id}">✕</button>
@@ -1012,10 +1092,11 @@
   $('#fin-add-expense').addEventListener('click', async () => {
     const compraId = $('#fin-select-compra').value;
     const descricao = $('#fin-desc').value.trim();
+    const categoria = $('#fin-categoria').value || 'Outros';
     const valor = Number($('#fin-valor').value) || 0;
     if (!compraId) { alert('Selecione uma compra primeiro.'); return; }
     if (!descricao || !valor) { alert('Preencha a descrição e o valor da despesa.'); return; }
-    const d = { id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), compraId, descricao, valor };
+    const d = { id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), compraId, descricao, categoria, valor, createdAt: new Date().toISOString() };
     despesas.push(d);
     await saveDespesa(d);
     $('#fin-desc').value = ''; $('#fin-valor').value = '';
@@ -1028,14 +1109,16 @@
     if (ordered.length === 0) { wrap.innerHTML = `<div class="empty">Nenhuma compra cadastrada ainda.</div>`; return; }
     const rows = ordered.map(c => {
       const comissao = calcComissaoValor(c);
+      const margem = calcMargemRevenda(c);
       const totalDesp = despesas.filter(d => d.compraId === c.id).reduce((s,d) => s + (Number(d.valor)||0), 0);
-      const resultado = comissao - totalDesp;
+      const resultado = comissao + margem - totalDesp;
       return `
         <tr>
           <td class="numbadge">#${c.numero || '—'}</td>
           <td class="city">${c.compradoPara || '—'}</td>
           <td>${c.qtd} ${c.animal}</td>
           <td>${fmtMoney(comissao)}</td>
+          <td>${margem > 0 ? fmtMoney(margem) : '—'}</td>
           <td>${fmtMoney(totalDesp)}</td>
           <td style="color:${resultado >= 0 ? 'var(--sage)' : 'var(--rust)'}; font-weight:600;">${resultado >= 0 ? '' : '-'}${fmtMoney(Math.abs(resultado))}</td>
         </tr>
@@ -1043,11 +1126,68 @@
     }).join('');
     wrap.innerHTML = `
       <table>
-        <thead><tr><th>#</th><th>Para</th><th>Qtd/Animal</th><th>Comissão</th><th>Despesas</th><th>Resultado</th></tr></thead>
+        <thead><tr><th>#</th><th>Para</th><th>Qtd/Animal</th><th>Comissão</th><th>Margem</th><th>Despesas</th><th>Resultado</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     `;
   }
+
+  // ---------- Render: Despesas por categoria ----------
+  let despesasTabFiltro = 'todas';
+  function despesasFiltradas() {
+    if (despesasTabFiltro !== 'mes') return despesas;
+    const now = new Date();
+    return despesas.filter(d => {
+      if (!d.createdAt) return false;
+      const dt = new Date(d.createdAt);
+      return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
+    });
+  }
+  function renderDespesasTab() {
+    const list = despesasFiltradas();
+    const total = list.reduce((s,d) => s + (Number(d.valor)||0), 0);
+    const porCategoria = CATEGORIAS_DESPESA.map(cat => ({
+      categoria: cat,
+      total: list.filter(d => (d.categoria || 'Outros') === cat).reduce((s,d) => s + (Number(d.valor)||0), 0)
+    })).filter(c => c.total > 0);
+
+    let statsHtml = `<div class="stat"><div class="n">${fmtMoney(total)}</div><div class="l">Total geral</div></div>`;
+    porCategoria.forEach(c => {
+      statsHtml += `<div class="stat"><div class="n">${fmtMoney(c.total)}</div><div class="l">${c.categoria}</div></div>`;
+    });
+    $('#gt-despesas-stats').innerHTML = statsHtml;
+    fitStatNumbers($('#gt-despesas-stats'));
+
+    const wrap = $('#gt-despesas-lista');
+    if (list.length === 0) { wrap.innerHTML = `<div class="empty">Nenhuma despesa lançada nesse período.</div>`; return; }
+    const ordered = [...list].sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+    const rows = ordered.map(d => {
+      const compra = compras.find(c => c.id === d.compraId);
+      return `
+        <tr>
+          <td>${d.createdAt ? new Date(d.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
+          <td>${d.categoria || 'Outros'}</td>
+          <td>${d.descricao || '—'}</td>
+          <td class="numbadge">${compra ? '#' + (compra.numero || '—') : '—'}</td>
+          <td>${fmtMoney(Number(d.valor)||0)}</td>
+        </tr>
+      `;
+    }).join('');
+    wrap.innerHTML = `
+      <table>
+        <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Compra</th><th>Valor</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+  $all('#tab-despesas .chip[data-despfiltro]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      $all('#tab-despesas .chip[data-despfiltro]').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      despesasTabFiltro = chip.dataset.despfiltro;
+      renderDespesasTab();
+    });
+  });
 
   // ---------- Status toggles ----------
   async function toggleEmbarque(id) {
@@ -1086,7 +1226,10 @@
       rendimento: Number($('#f-rendimento').value) || 0,
       desconto: Number($('#f-desconto').value) || 0,
       valor: Number($('#f-valor').value) || 0,
-      valorCabeca: Number($('#f-valor-cabeca').value) || 0
+      valorVenda: Number($('#f-valor-venda').value) || 0,
+      valorCabeca: Number($('#f-valor-cabeca').value) || 0,
+      valorVendaCabeca: Number($('#f-valor-venda-cabeca').value) || 0,
+      comissao: Number($('#f-comissao').value) || 0
     };
   }
   function updatePreview() {
@@ -1098,14 +1241,16 @@
     let txt = `Valor por cabeça: ${fmtMoney(porCabeca)}`;
     if (d.tipoPrecificacao === 'arroba' && arrobaCab) txt += ` (${arrobaCab.toFixed(2)} @/cab.)`;
     txt += ` · Valor total do lote: ${fmtMoney(total)}`;
+    const margem = calcMargemRevenda(d);
+    if (margem > 0) txt += ` · Margem de revenda: ${fmtMoney(margem)} · Lucro total (margem + comissão): ${fmtMoney(calcLucroTotal(d))}`;
     $('#f-preview').textContent = txt;
   }
-  ['f-qtd','f-peso','f-rendimento','f-desconto','f-valor','f-valor-cabeca'].forEach(id => {
+  ['f-qtd','f-peso','f-rendimento','f-desconto','f-valor','f-valor-venda','f-valor-cabeca','f-valor-venda-cabeca','f-comissao'].forEach(id => {
     $('#' + id).addEventListener('input', updatePreview);
   });
 
   function clearForm() {
-    ['f-para','f-de','f-qtd','f-peso','f-valor','f-rendimento','f-desconto','f-comissao','f-valor-cabeca','f-data-compra','f-data-embarque','f-destino','f-gta'].forEach(id => { $('#' + id).value = ''; });
+    ['f-para','f-de','f-qtd','f-peso','f-valor','f-valor-venda','f-rendimento','f-desconto','f-comissao','f-valor-cabeca','f-valor-venda-cabeca','f-data-compra','f-data-embarque','f-destino','f-gta'].forEach(id => { $('#' + id).value = ''; });
     $('#f-animal').value = 'Bezerro';
     $('#f-balanca').value = '';
     $('#f-estado').value = '';
@@ -1132,10 +1277,12 @@
     $('#f-balanca').value = c.tipoBalanca || '';
     setTipoPrecificacao(c.tipoPrecificacao === 'cabeca' ? 'cabeca' : 'arroba');
     $('#f-valor').value = c.valor || '';
+    $('#f-valor-venda').value = c.valorVenda || '';
     $('#f-rendimento').value = c.rendimento || '';
     $('#f-desconto').value = c.desconto || '';
     $('#f-peso').value = c.peso || '';
     $('#f-valor-cabeca').value = c.valorCabeca || '';
+    $('#f-valor-venda-cabeca').value = c.valorVendaCabeca || '';
     $('#f-comissao').value = c.comissao || '';
     $('#f-data-compra').value = c.dataCompra || '';
     $('#f-data-embarque').value = c.dataEmbarque || '';
@@ -1176,10 +1323,12 @@
       tipoBalanca: $('#f-balanca').value,
       tipoPrecificacao,
       valor: Number($('#f-valor').value) || 0,
+      valorVenda: Number($('#f-valor-venda').value) || 0,
       rendimento: Number($('#f-rendimento').value) || 0,
       desconto: Number($('#f-desconto').value) || 0,
       peso: Number($('#f-peso').value) || 0,
       valorCabeca: Number($('#f-valor-cabeca').value) || 0,
+      valorVendaCabeca: Number($('#f-valor-venda-cabeca').value) || 0,
       comissao: Number($('#f-comissao').value) || 0,
       dataCompra: $('#f-data-compra').value,
       dataEmbarque: $('#f-data-embarque').value,
@@ -1296,5 +1445,3 @@
 
 </body>
 </html>
-
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
